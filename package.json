@@ -1,0 +1,23 @@
+{
+  "name": "portkill",
+  "version": "1.0.0",
+  "description": "Find and kill whatever process is holding a TCP port. Cross-platform (Windows/macOS/Linux), zero deps.",
+  "type": "module",
+  "bin": {
+    "portkill": "./dist/cli.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsdown",
+    "test": "bun test",
+    "start": "bun run src/cli.ts",
+    "prepublishOnly": "bun run build"
+  },
+  "keywords": ["port", "kill", "process", "cli", "eaddrinuse", "devtools"],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "tsdown": "^0.9.0",
+    "typescript": "^5.7.0"
+  }
+}
