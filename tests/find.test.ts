@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test";
-import { parseNetstat, parseLsof, isValidPort } from "../src/find";
+import { parseNetstat, parseLsof, isValidPort, parsePort, unknownFlags, buildLsofArgs } from "../src/find";
 
 const NETSTAT = `
 Active Connections
@@ -33,4 +33,22 @@ test("isValidPort bounds", () => {
   expect(isValidPort(0)).toBe(false);
   expect(isValidPort(70000)).toBe(false);
   expect(isValidPort(NaN)).toBe(false);
+});
+
+test("parsePort accepts only plain decimal ports", () => {
+  expect(parsePort("3000")).toBe(3000);
+  for (const bad of ["0x50", "1e3", " 80", "80.5", "-5", "0", "65536", "", undefined]) {
+    expect(parsePort(bad)).toBeNull();
+  }
+});
+
+test("unknownFlags flags typos but not known options", () => {
+  expect(unknownFlags(["3000", "--list", "--force", "--yes", "-y", "-h"])).toEqual([]);
+  expect(unknownFlags(["3000", "--forse"])).toEqual(["--forse"]);
+});
+
+test("buildLsofArgs restricts to LISTEN sockets", () => {
+  const args = buildLsofArgs(3000);
+  expect(args).toContain("-sTCP:LISTEN");
+  expect(args).toContain("-iTCP:3000");
 });

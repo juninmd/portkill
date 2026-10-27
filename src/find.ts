@@ -30,3 +30,22 @@ export function parseLsof(output: string): number[] {
 export function isValidPort(n: unknown): n is number {
   return typeof n === "number" && Number.isInteger(n) && n >= 1 && n <= 65535;
 }
+
+/** Strict decimal port parser: rejects "0x50", "1e3", " 80", "80.5", "-5". */
+export function parsePort(token: string | undefined): number | null {
+  if (token === undefined || !/^\d{1,5}$/.test(token)) return null;
+  const n = Number(token);
+  return isValidPort(n) ? n : null;
+}
+
+const KNOWN_FLAGS = new Set(["--list", "--force", "--yes", "-y", "-h", "--help"]);
+
+/** Flags that are not recognised (so typos like `--forse` never run a kill). */
+export function unknownFlags(argv: string[]): string[] {
+  return argv.filter((a) => a.startsWith("-") && !KNOWN_FLAGS.has(a));
+}
+
+/** lsof args restricted to LISTEN sockets on the port (no clients, no DNS/service lookup). */
+export function buildLsofArgs(port: number): string[] {
+  return ["-nP", `-iTCP:${port}`, "-sTCP:LISTEN", "-t"];
+}

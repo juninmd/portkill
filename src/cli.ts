@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import { execSync } from "node:child_process";
-import { parseNetstat, parseLsof, isValidPort } from "./find";
+import { execFileSync, execSync } from "node:child_process";
+import { parseNetstat, parseLsof, parsePort, unknownFlags, buildLsofArgs } from "./find";
 
 const isWin = process.platform === "win32";
 
@@ -25,7 +25,7 @@ Options:
 function pidsOnPort(port: number): number[] {
   try {
     if (isWin) return parseNetstat(execSync("netstat -ano", { encoding: "utf8" }), port);
-    return parseLsof(execSync(`lsof -ti tcp:${port}`, { encoding: "utf8" }));
+    return parseLsof(execFileSync("lsof", buildLsofArgs(port), { encoding: "utf8" }));
   } catch {
     return []; // command returns non-zero when nothing matches
   }
@@ -41,9 +41,14 @@ function main(argv: string[]): number {
     console.log(HELP);
     return argv.length === 0 ? 2 : 0;
   }
-  const port = Number(argv.find((a) => !a.startsWith("-")));
-  if (!isValidPort(port)) {
-    console.error(C.red("error: give a valid port (1-65535)"));
+  const bad = unknownFlags(argv);
+  if (bad.length > 0) {
+    console.error(C.red(`error: unknown option "${bad[0]}" (see --help)`));
+    return 2;
+  }
+  const port = parsePort(argv.find((a) => !a.startsWith("-")));
+  if (port === null) {
+    console.error(C.red("error: give a valid decimal port (1-65535)"));
     return 2;
   }
   const list = argv.includes("--list");
